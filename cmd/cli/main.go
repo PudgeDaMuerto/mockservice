@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"os"
 
@@ -16,12 +17,17 @@ func main() {
 	listenFlag := &cli.StringFlag{
 		Name:    "listen",
 		Usage:   "address to listen on",
-		Value:   ":3000",
+		Value:   "0.0.0.0:4000",
 		Aliases: []string{"l"},
 		Validator: func(addr string) error {
 			_, _, err := net.SplitHostPort(addr)
 			return err
 		},
+	}
+
+	stdinFlag := &cli.BoolFlag{
+		Name:  "stdin",
+		Usage: "use config from stdin",
 	}
 
 	configArg := &cli.StringArg{
@@ -32,7 +38,7 @@ func main() {
 		Name:      "serve",
 		Usage:     "start mockservice",
 		Action:    serve,
-		Flags:     []cli.Flag{listenFlag},
+		Flags:     []cli.Flag{listenFlag, stdinFlag},
 		Arguments: []cli.Argument{configArg},
 	}
 
@@ -48,20 +54,29 @@ func main() {
 }
 
 func serve(ctx context.Context, cmd *cli.Command) error {
+	isStdin := cmd.Bool("stdin")
+	addr := cmd.String("listen")
 	configPath := cmd.StringArg("config")
-	if configPath == "" {
-		return errors.New("config file is required")
+
+	if configPath == "" && !isStdin {
+		return errors.New("config file is required. put it as second argument or from stdin using --stdin")
 	}
 
-	addr := cmd.String("listen")
+	var file io.Reader = os.Stdin
+	if !isStdin {
+		var err error
+		file, err = os.Open(configPath)
+		if err != nil {
+			return err
+		}
+	}
 
-	serviceConfig, err := config.Load(configPath)
+	serviceConfig, err := config.Load(file)
 	if err != nil {
 		return err
 	}
 
 	app := app.NewApp(*serviceConfig, addr)
-
 	err = app.Serve()
 
 	return err
