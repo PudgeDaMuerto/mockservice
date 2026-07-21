@@ -1,11 +1,14 @@
+.PHONY: build
 build:
 	go build -o mockservice ./cmd/cli
 
+.PHONY: run
 run:
 	go run ./cmd/cli
 
+.PHONY: build_release
 build_release:
-	CGO_ENABLED=0 GOOS=linux go build \
+	go build \
 	-ldflags="-s -w" \
-	-o mockservice \
+	-o "mockservice$(BINARY_EXT)" \
 	./cmd/cli
