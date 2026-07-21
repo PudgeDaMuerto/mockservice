@@ -13,6 +13,11 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
+var (
+	version = "dev"
+	commit  = "none"
+)
+
 func main() {
 	listenFlag := &cli.StringFlag{
 		Name:    "listen",
@@ -34,6 +39,16 @@ func main() {
 		Name: "config",
 	}
 
+	versionFlag := &cli.BoolFlag{
+		Name:    "version",
+		Aliases: []string{"v"},
+		Action: func(ctx context.Context, c *cli.Command, b bool) error {
+			fmt.Printf("version: %s\ncommit: %s\n", version, commit)
+			os.Exit(0)
+			return nil
+		},
+	}
+
 	serveCmd := &cli.Command{
 		Name:      "serve",
 		Usage:     "start mockservice",
@@ -45,6 +60,7 @@ func main() {
 	cmd := &cli.Command{
 		Name:     "mockservice",
 		Commands: []*cli.Command{serveCmd},
+		Flags:    []cli.Flag{versionFlag},
 	}
 
 	if err := cmd.Run(context.Background(), os.Args); err != nil {
