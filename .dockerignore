@@ -1,0 +1,10 @@
+.git
+.idea
+.vscode
+.DS_Store
+
+bin/
+tmp/
+
+*.md
+examples/
