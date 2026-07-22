@@ -22,7 +22,7 @@ func main() {
 	listenFlag := &cli.StringFlag{
 		Name:    "listen",
 		Usage:   "address to listen on",
-		Value:   "0.0.0.0:4000",
+		Value:   "localhost:4000",
 		Aliases: []string{"l"},
 		Validator: func(addr string) error {
 			_, _, err := net.SplitHostPort(addr)
@@ -64,7 +64,7 @@ func main() {
 	}
 
 	if err := cmd.Run(context.Background(), os.Args); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to serve:\n\t%v\n", err)
+		fmt.Fprintf(os.Stderr, "failed to serve\n%v", err)
 		os.Exit(1)
 	}
 }
