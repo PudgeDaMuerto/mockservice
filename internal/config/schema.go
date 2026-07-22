@@ -1,5 +1,7 @@
 package config
 
+import "time"
+
 type ServiceConfig struct {
 	Routes map[string]Routes `yaml:"routes"`
 }
@@ -12,12 +14,14 @@ type Route struct {
 }
 
 type Response struct {
-	Status int  `yaml:"status"`
-	Body   Body `yaml:"body,omitempty"`
+	Status int    `yaml:"status"`
+	Body   Body   `yaml:"body,omitempty"`
+	Delay  *Delay `yaml:"delay,omitempty"` // Time in nanoseconds
 }
 
 type Body any
 type HTTPMethod string
+type Delay time.Duration
 
 const (
 	GET    HTTPMethod = "GET"

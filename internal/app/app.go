@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/pudgedamuerto/mockservice/internal/config"
 )
@@ -28,30 +29,49 @@ func (a App) Serve() error {
 	for endpoint, routes := range a.cnf.Routes {
 		for _, route := range routes {
 			pattern := fmt.Sprintf("%s %s", route.Method, endpoint)
-			log.Println(pattern)
+			message := pattern
+			delay := route.Response.Delay
+			if delay != nil {
+				message = fmt.Sprintf("%s (delay: %s)", pattern, time.Duration(*delay))
+			}
+			log.Println(message)
+
+			json, err := json.Marshal(route.Response.Body)
+			if err != nil {
+				return err
+			}
 
 			mux.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
+				defer r.Body.Close()
+
 				body, err := io.ReadAll(r.Body)
 				if err != nil {
 					log.Printf("ERROR: %s", err)
+					return
 				}
 
-				var requestLog string = "nil"
+				requestLog := "nil"
 				if len(body) != 0 {
 					requestLog = string(body)
 				}
 
 				log.Printf("%s called with request: %s", pattern, requestLog)
-				json, err := json.Marshal(route.Response.Body)
-				if err != nil {
-					log.Printf("ERROR: %s", err)
-				}
 
-				w.Header().Set("content-type", "application/json")
+				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(route.Response.Status)
+
+				if d := route.Response.Delay; d != nil {
+					select {
+					case <-time.After(time.Duration(*d)):
+					case <-r.Context().Done():
+						log.Println("request canceled")
+						return
+					}
+				}
 
 				if _, err := w.Write(json); err != nil {
 					log.Printf("ERROR: %s", err)
+					return
 				}
 			})
 		}

@@ -1,0 +1,7 @@
+routes:
+  /highload:
+    - method: GET
+      response:
+        status: 200
+        body: done
+        delay: 10s
